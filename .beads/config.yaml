@@ -1,3 +1,6 @@
 issue_prefix: dt
 issue-prefix: dt
-dolt.auto-start: false
+dolt.auto-start: true
+export.auto: false
+
+sync.remote: "file:///mnt/c/Users/steve/dolt-remotes/ditto"
