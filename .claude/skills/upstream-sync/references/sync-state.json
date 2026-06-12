@@ -1,0 +1,25 @@
+{
+  "last_synced": "2026-03-05",
+  "sources": {
+    "agentskills/agentskills": {
+      "last_commit_seen": "2026-03-05",
+      "last_commit_msg": "Merge pull request #197 from jonathanhefner/add-instructions-urls-and-source-code-urls",
+      "notes": "Evals guide added Mar 4, scripts guide Feb 27, integrating skills guide Mar 5"
+    },
+    "anthropics/skills": {
+      "last_commit_seen": "2026-03-04",
+      "last_commit_msg": "Add claude-api skill (#515)",
+      "notes": "skill-creator updated Feb 6"
+    },
+    "skills-ref": {
+      "version": "0.1.0"
+    },
+    "claude-code-docs": {
+      "last_checked": "2026-03-05",
+      "docs_url": "code.claude.com/docs/en/skills",
+      "notes": "Redirected from docs.anthropic.com. Bundled skills: simplify, batch, debug, claude-api."
+    }
+  },
+  "terminology_mapping_rev": 3,
+  "summary": "Initial sync state. All sources verified against live specs. No version numbering in agentskills spec — tracks via commit history."
+}
