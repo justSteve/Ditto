@@ -2,8 +2,6 @@
   "permissions": {
     "allow": [
       "Edit(*)",
-      "Write(*)",
-      "MultiEdit(*)",
       "Read(*)",
       "Glob(*)",
       "Grep(*)",
