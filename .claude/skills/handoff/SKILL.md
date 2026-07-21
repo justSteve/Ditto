@@ -1,12 +1,12 @@
 ---
 name: handoff
-description: Prepend session handoff to DaysActivity.md (team-aware)
+description: Prepend session handoff to DaysActivity.md
 allowed-tools: Bash, Read, Write, Glob
 ---
 
 # Create Session Handoff
 
-Prepend a session handoff entry to `DaysActivity.md` (cumulative daily log). **Team-aware**: Records team progress when experimental agent teams are enabled.
+Prepend a session handoff entry to `DaysActivity.md` (cumulative daily log).
 
 ## Anti-Shadowing Rule
 
@@ -27,49 +27,17 @@ NEVER generate DaysActivity entries freeform. Only this skill writes to DaysActi
    - If missing or wrong date: Create fresh file with today's header
    - If exists with today's date: Prepend new entry
 
-3. **Check for experimental teams**
-   ```bash
-   claude config get experimental.agentTeams 2>/dev/null || echo "teams_disabled"
-   ```
-   - Set flag: TEAMS_ENABLED=true/false
-
-4. **Gather team state** (if TEAMS_ENABLED)
-
-   **4a. Team progress summary**:
-   ```bash
-   # Get team bead status
-   jq -r 'select(.metadata.team) |
-     [.metadata.team, .status, .id, .title] | @tsv' \
-     /root/projects/Ditto/.beads/issues.jsonl | \
-     sort | column -t
-   ```
-
-   **4b. Identify team transitions**:
-   - Which beads were completed this session?
-   - Which teams are now unblocked?
-   - Which teams are ready to launch?
-
-   ```bash
-   # Recently completed beads (would need timestamp check)
-   jq -r 'select(.status == "closed" and .metadata.team) |
-     [.metadata.team, .id, .title] | @tsv' \
-     /root/projects/Ditto/.beads/issues.jsonl
-   ```
-
-5. **Gather context**
+3. **Gather context**
    - Read `CurrentStatus.md` for current state
    - Review recent conversation for session summary
    - Note any discoveries or issues encountered
-   - **TEAMS**: Note team progress, blockers resolved, new blockers
 
-6. **Check open beads**
+4. **Check open beads**
    ```bash
-   tail -30 /root/projects/Ditto/.beads/issues.jsonl | jq -r 'select(.status == "open") | [.id, .type, .title] | @tsv' | column -t
+   bd list --status open
    ```
 
-7. **Create handoff entry**
-
-   **Standard format** (when teams NOT enabled):
+5. **Create handoff entry**
 
 ```markdown
 ## HH:MM - Session Handoff [Brief Topic Tag]
@@ -91,40 +59,7 @@ path/to/file2.ts
 ---
 ```
 
-   **Team-aware format** (when teams enabled):
-
-```markdown
-## HH:MM - Session Handoff [Team Execution]
-
-**Summary**: [1-2 sentence description of what was accomplished]
-
-**Teams Active**: [count] ([list team names])
-
-**Team Progress**:
-- **Team Alpha**: Completed alpha.1, alpha.2. In progress: alpha.3 (2h remaining)
-- **Team Beta**: Blocked on alpha.3, ready to launch after gate opens
-- **Team Gamma**: Ready to launch (no blockers)
-- **Team Epsilon**: epsilon.1 (MCP deployment) complete
-
-**Team State Transitions**:
-- Alpha.1 completed -> Alpha.2 now active
-- Epsilon.1 completed -> MCP deployed and running
-
-**Next Session Actions**:
-- Resume Team Alpha: Complete alpha.3, alpha.4 (~4h)
-- Launch Beta/Gamma/Delta in parallel once Alpha gate opens
-
-**Open Work**:
-- [Any non-team work items]
-
-**Files Changed**:
-path/to/file1.md
-path/to/file2.ts
-
----
-```
-
-8. **Prepend to DaysActivity.md**
+6. **Prepend to DaysActivity.md**
    - Read existing content
    - Write: new entry + blank line + existing content
    - Preserve the `# DaysActivity - YYYY-MM-DD` header at top
@@ -170,23 +105,13 @@ If any check fails, fix the entry before reporting success. Do not hand back a p
 - Files changed section only if files were actually modified
 - **Tried section**: Include when the session involved debugging, investigation, or troubleshooting. Failed approaches are the most expensive thing for the next session to rediscover. Each entry: what was tried, what happened, why it worked or didn't. Skip for straightforward sessions (deploys, config changes, clean implementations).
 
-## Team-Specific Notes
+## Removed, deliberately
 
-When recording team handoffs:
-
-**1. Team Progress**:
-- List each active team
-- Show completed beads and in-progress bead
-- Estimate time remaining for in-progress work
-
-**2. Team State Transitions**:
-- Show causality (bead X completed -> team Y can now start)
-
-**3. Next Session Actions**:
-- Be specific: "Resume Team Alpha" is not enough
-- Include: which bead, what's left, estimated duration
-- Highlight ready-to-launch teams
-- Note critical path dependencies
-
-**Critical**: The handoff's "Next Session Actions" becomes tap-in's "Resumption Guidance"
-
+**Agent-teams detection and the team-aware handoff format.** A step near the top
+used to run `claude config get experimental.agentTeams`. That call **hangs** on
+Claude Code 2.1.216 — it never returns, even with stdin closed (verified: 20s
+timeout, rc=124) — so it burned the Bash timeout on every handoff. The
+team-state gathering it guarded ran `jq` against `.beads/issues.jsonl`, a file
+that does not exist because the beads store is Dolt-backed, and nothing ever set
+the flag that would have selected the team-aware entry format. A hang feeding a
+no-op. Removed 2026-07-21 (co-kavq). `/tap-in` carried the same call.

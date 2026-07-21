@@ -1,28 +1,17 @@
 ---
 name: tap-in
-description: Initialize session with context briefing (team-aware)
+description: Initialize session with context briefing
 context: fork
 allowed-tools: Bash, Read, Glob, Write
 ---
 
 # Tap In - Session Initialization
 
-Read recent activity and current state to get oriented at session start. **Team-aware**: Detects experimental agent teams and provides team coordination guidance.
+Read recent activity and current state to get oriented at session start.
 
 ## Workflow
 
-### 1. Check Session Capabilities
-
-```bash
-# Check if experimental agent teams are enabled
-claude config get experimental.agentTeams 2>/dev/null || echo "teams_disabled"
-```
-
-**Set flag**: `TEAMS_ENABLED=true/false` for subsequent steps
-
----
-
-### 2. Get Current Date
+### 1. Get Current Date
 
 ```bash
 date +%Y-%m-%d
@@ -30,7 +19,7 @@ date +%Y-%m-%d
 
 ---
 
-### 3. Check if Daily Housekeeping Needed
+### 2. Check if Daily Housekeeping Needed
 
 ```bash
 head -1 /root/projects/Ditto/DaysActivity.md 2>/dev/null
@@ -42,13 +31,12 @@ head -1 /root/projects/Ditto/DaysActivity.md 2>/dev/null
 
 ---
 
-### 4. Read Recent Activity
+### 3. Read Recent Activity
 
 **Last 2-3 entries from DaysActivity.md**:
 - Note open work items
 - Note recent state/issues
 - Identify continuity threads
-- **TEAMS**: Look for team mentions (Team Alpha, Team Beta, etc.)
 
 ```bash
 head -80 /root/projects/Ditto/DaysActivity.md
@@ -56,7 +44,7 @@ head -80 /root/projects/Ditto/DaysActivity.md
 
 ---
 
-### 5. Read CurrentStatus.md
+### 4. Read CurrentStatus.md
 
 ```bash
 cat /root/projects/Ditto/CurrentStatus.md
@@ -66,7 +54,7 @@ Get operational context.
 
 ---
 
-### 5.5. Check Zepo-Pulse Heartbeat
+### 5. Check Zepo-Pulse Heartbeat
 
 Detect whether last night's `pulse-zepos` run completed. If the heartbeat file
 is missing or older than 25h, file a P1 bead so the morning session surfaces
@@ -98,10 +86,10 @@ here is swallowed so /tap-in continues.
 } 2>/dev/null || true
 ```
 
-If a P1 bead is filed here, it will appear in step 6's open-bead listing and
+If a P1 bead is filed here, it will appear in step 7's open-bead listing and
 surface in the briefing's Open Beads section automatically.
 
-### 5.6. Check Zepo Sync Failures
+### 6. Check Zepo Sync Failures
 
 After checking heartbeat staleness, check whether the last pulse run had any
 fork sync failures. These indicate zepos falling behind upstream — a standing
@@ -135,15 +123,15 @@ a standing order; blocked syncs mean the fork is diverging.
 
 ---
 
-### 6. Check Open Beads
+### 7. Check Open Beads
 
 ```bash
-tail -30 /root/projects/Ditto/.beads/issues.jsonl | jq -r 'select(.status == "open") | [.id, .type, .title] | @tsv' | column -t
+bd list --status open
 ```
 
 ---
 
-### 6.5. Check CM Search Substrate
+### 8. Check CM Search Substrate
 
 Query CM health to distinguish three failure modes that all look the same to a caller:
 (a) server down, (b) server up but empty index, (c) server up but stale index.
@@ -166,31 +154,7 @@ Include any warning in the **Current State** section of the briefing.
 
 ---
 
-### 7. Team State Analysis (if TEAMS_ENABLED)
-
-**7a. Scan beads for team assignments**:
-
-```bash
-# Get all open beads with team metadata
-jq -r 'select(.status == "open") | [.id, .title, .metadata.team // "none", .metadata.priority // "none"] | @tsv' \
-  /root/projects/Ditto/.beads/issues.jsonl | column -t
-```
-
-**7b. Group beads by team**:
-
-```bash
-# Count beads per team
-jq -r 'select(.status == "open" and .metadata.team) | .metadata.team' \
-  /root/projects/Ditto/.beads/issues.jsonl | sort | uniq -c
-```
-
-**7c. Identify ready-to-launch teams**:
-
-Teams with open beads assigned and no blocking dependencies.
-
----
-
-### 7.5. Archive Previous Briefing and Increment Session Counter
+### 9. Archive Previous Briefing and Increment Session Counter
 
 ```bash
 # Archive previous briefing (if it exists) before overwriting
@@ -213,7 +177,7 @@ Store `SESSION_N` for use in the briefing header.
 
 ---
 
-### 8. Output Session Briefing
+### 10. Output Session Briefing
 
 **Write to**: `/root/projects/Ditto/session-briefing.md`
 
@@ -262,18 +226,18 @@ is what makes items hotkey-invocable in the CONTENT pane.
 
 ---
 
-### 8.5. Ensure Steve's Desk Session Is Running
+### 11. Ensure Steve's Desk Session Is Running
 
 ```bash
 /root/projects/Ditto/tmuxMOO/bin/steves-desk-session.sh
 ```
 
 Idempotent — exits immediately if steves-desk is already up, creates it if
-not. The desk must be running before step 9 can register anything.
+not. The desk must be running before step 12 can register anything.
 
 ---
 
-### 9. Register Briefing with Steve's Desk
+### 12. Register Briefing with Steve's Desk
 
 ```bash
 /root/projects/Ditto/tmuxMOO/bin/desk-register.sh System session-briefing.md
@@ -286,7 +250,7 @@ in the steves-desk System window. Idempotent — safe to run on every tap-in.
 
 ## Pairs With
 
-- `/handoff` - Session end (records team state)
+- `/handoff` - Session end
 - `/daily-housekeeping` - Runs before tap-in if date changed
 
 ## Re-run Anytime
@@ -295,3 +259,16 @@ This skill can be invoked mid-session to refresh context:
 ```
 /tap-in
 ```
+
+## Removed, deliberately
+
+**Agent-teams detection and the Team State Analysis step.** The first step used
+to run `claude config get experimental.agentTeams`. That call **hangs** on
+Claude Code 2.1.216 — it never returns, even with stdin closed (verified: 20s
+timeout, rc=124) — so it burned the Bash timeout on every session start. Its
+only consumer was a Team State Analysis step that ran `jq` against
+`.beads/issues.jsonl`, a file that does not exist because the beads store is
+Dolt-backed. Nothing ever set the flag the team-aware output was gated on, so
+that output was unreachable too. A hang feeding a no-op. Removed 2026-07-21
+(co-kavq). `/handoff` carried the same call — check there before
+reintroducing anything like it.
