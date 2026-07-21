@@ -229,7 +229,7 @@ is what makes items hotkey-invocable in the CONTENT pane.
 ### 11. Ensure Steve's Desk Session Is Running
 
 ```bash
-/root/projects/Ditto/tmuxMOO/bin/steves-desk-session.sh
+bash /root/projects/Ditto/tmuxMOO/bin/steves-desk-session.sh
 ```
 
 Idempotent — exits immediately if steves-desk is already up, creates it if
@@ -240,7 +240,7 @@ not. The desk must be running before step 12 can register anything.
 ### 12. Register Briefing with Steve's Desk
 
 ```bash
-/root/projects/Ditto/tmuxMOO/bin/desk-register.sh System session-briefing.md
+bash /root/projects/Ditto/tmuxMOO/bin/desk-register.sh System session-briefing.md
 ```
 
 Ensures the session-briefing.md is in the StevesDocs manifest so it appears

@@ -50,7 +50,16 @@
       "Bash(sleep *)",
       "Bash(timeout *)",
       "WebFetch(*)",
-      "WebSearch(*)"
+      "WebSearch(*)",
+      "Bash(date *)",
+      "Bash(cut *)",
+      "Bash(tr *)",
+      "Bash(uniq *)",
+      "Bash(printf *)",
+      "Bash(basename *)",
+      "Bash(dirname *)",
+      "Bash(true)",
+      "Bash(false)"
     ],
     "deny": [
       "Read(.env)",
