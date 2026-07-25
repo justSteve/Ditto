@@ -3,4 +3,8 @@ issue-prefix: dt
 dolt.auto-start: true
 export.auto: false
 
-sync.remote: "file:///mnt/c/Users/steve/dolt-remotes/ditto"
+# No sync.remote [co-48nb2.7]. It pointed at
+# file:///mnt/c/Users/steve/dolt-remotes/ditto — a remote for a Dolt store that
+# does not exist here (this repo tracks beads in issues.jsonl only), and the
+# remote directory does not exist either. Doubly dangling, so removed. If Ditto
+# ever gets a real Dolt store, `bd dolt remote add` will set this correctly.
